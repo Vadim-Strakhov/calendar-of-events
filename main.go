@@ -1,145 +1,157 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/Vadim-Strakhov/calendar-of-events/calendar"
 	"github.com/Vadim-Strakhov/calendar-of-events/events"
+	"github.com/Vadim-Strakhov/calendar-of-events/storage"
 )
 
+type CustomStruct struct {
+	Name        string `json:"name"`
+	Age         int    `json:"age"`
+	Email       string `json:"email,omitempty"`
+	IsActive    bool   `json:"is_active"`
+	Description string `json:"description,omitempty"`
+}
+
 func main() {
-	fmt.Println("=== Тестирование валидации заголовков с regexp ===")
+	fmt.Println("=== Демонстрация сериализации данных ===")
 
-	fmt.Println("\n--- Создание валидных событий ---")
-	event1, err := events.NewEvent("Meeting with client", "2024-01-15 14:30")
+	// 1. Демонстрация работы с собственной структурой и JSON тегами
+	fmt.Println("\n--- Тестирование JSON тегов ---")
+
+	person1 := CustomStruct{
+		Name:        "Иван Петров",
+		Age:         30,
+		Email:       "ivan@example.com",
+		IsActive:    true,
+		Description: "Активный пользователь",
+	}
+
+	person2 := CustomStruct{
+		Name:     "Мария Сидорова",
+		Age:      25,
+		IsActive: false,
+	}
+
+	data1, err := json.MarshalIndent(person1, "", "  ")
 	if err != nil {
-		log.Fatal("Ошибка создания события 1:", err)
+		log.Fatal("Ошибка маршалинга person1:", err)
 	}
-	fmt.Println("✓ Событие 1 создано успешно")
 
-	event2, err := events.NewEvent("Project presentation", "2024-01-16 10:00")
+	data2, err := json.MarshalIndent(person2, "", "  ")
 	if err != nil {
-		log.Fatal("Ошибка создания события 2:", err)
+		log.Fatal("Ошибка маршалинга person2:", err)
 	}
-	fmt.Println("✓ Событие 2 создано успешно")
 
-	event3, err := events.NewEvent("Team lunch", "2024-01-15 12:00")
+	fmt.Println("Person1 (все поля):")
+	fmt.Println(string(data1))
+
+	fmt.Println("\nPerson2 (с omitempty):")
+	fmt.Println(string(data2))
+
+	// 2. Демонстрация работы с календарем и разными storage
+	fmt.Println("\n--- Тестирование календаря с разными storage ---")
+
+	// Выберите нужный стор: JSON или ZIP
+	// s := storage.NewJsonStorage("calendar.json")
+	s := storage.NewZipStorage("calendar.zip")
+
+	c := calendar.NewCalendar(s)
+
+	// Загружаем существующие данные при старте
+	err = c.Load()
 	if err != nil {
-		log.Fatal("Ошибка создания события 3:", err)
-	}
-	fmt.Println("✓ Событие 3 создано успешно")
-
-	fmt.Println("\n--- Тестирование невалидных заголовков ---")
-
-	_, err = events.NewEvent("", "2024-01-15 14:30")
-	if err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка для пустого заголовка: %v\n", err)
+		fmt.Println("Файл календаря не найден или не прочитан, создаем новый календарь")
+	} else {
+		fmt.Println("Календарь загружен из хранилища")
+		c.ShowEvents()
 	}
 
-	_, err = events.NewEvent("Hi", "2024-01-15 14:30")
-	if err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка для короткого заголовка: %v\n", err)
+	defer func() {
+		err := c.Save()
+		if err != nil {
+			fmt.Println("Ошибка при сохранении календаря:", err)
+		} else {
+			fmt.Println("Календарь автоматически сохранен при завершении")
+		}
+	}()
+
+	fmt.Println("\n--- Создание новых событий ---")
+	if len(c.GetEventsMap()) == 0 {
+		event1, err := events.NewEvent("Meeting with client", "2024-01-15 14:30", events.PriorityHigh)
+		if err != nil {
+			log.Fatal("Ошибка создания события 1:", err)
+		}
+
+		event2, err := events.NewEvent("Project presentation", "2024-01-16 10:00", events.PriorityMedium)
+		if err != nil {
+			log.Fatal("Ошибка создания события 2:", err)
+		}
+
+		event3, err := events.NewEvent("Team lunch", "2024-01-15 12:00", events.PriorityLow)
+		if err != nil {
+			log.Fatal("Ошибка создания события 3:", err)
+		}
+
+		if err := c.AddEvent("meeting1", event1); err != nil {
+			log.Fatal("Ошибка добавления события 1:", err)
+		}
+		if err := c.AddEvent("presentation", event2); err != nil {
+			log.Fatal("Ошибка добавления события 2:", err)
+		}
+		if err := c.AddEvent("lunch", event3); err != nil {
+			log.Fatal("Ошибка добавления события 3:", err)
+		}
 	}
 
-	longTitle := "This is a very long title that exceeds the maximum allowed length of fifty characters"
-	_, err = events.NewEvent(longTitle, "2024-01-15 14:30")
-	if err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка для длинного заголовка: %v\n", err)
-	}
+	c.ShowEvents()
 
-	_, err = events.NewEvent("Встреча с клиентом", "2024-01-15 14:30")
-	if err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка для заголовка с кириллицей: %v\n", err)
-	}
-
-	_, err = events.NewEvent("Meeting!@#$%", "2024-01-15 14:30")
-	if err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка для заголовка со спецсимволами: %v\n", err)
-	}
-
-	_, err = events.NewEvent("   ", "2024-01-15 14:30")
-	if err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка для заголовка из пробелов: %v\n", err)
-	}
-
-	fmt.Println("\n--- Добавление событий в календарь ---")
-	if err := calendar.AddEvent("meeting1", event1); err != nil {
-		log.Fatal("Ошибка добавления события 1:", err)
-	}
-
-	if err := calendar.AddEvent("presentation", event2); err != nil {
-		log.Fatal("Ошибка добавления события 2:", err)
-	}
-
-	if err := calendar.AddEvent("lunch", event3); err != nil {
-		log.Fatal("Ошибка добавления события 3:", err)
-	}
-
-	calendar.ShowEvents()
-
-	fmt.Println("\n--- Тестирование редактирования событий ---")
-
-	if err := calendar.UpdateEvent("meeting1", "Updated meeting with client", "2024-01-15 16:00"); err != nil {
+	fmt.Println("\n--- Тестирование редактирования ---")
+	if err := c.UpdateEvent("meeting1", "Updated meeting with client", "2024-01-15 16:00", events.PriorityMedium); err != nil {
 		log.Fatal("Ошибка обновления события:", err)
 	}
 
-	if err := calendar.UpdateEvent("presentation", "Презентация!", "2024-01-16 10:00"); err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка при обновлении с недопустимыми символами: %v\n", err)
+	c.ShowEvents()
+
+	fmt.Println("\n--- Тестирование напоминаний ---")
+	if err := c.SetEventReminder("meeting1", "Подготовить документы", time.Now().Add(24*time.Hour)); err != nil {
+		log.Println("Ошибка установки напоминания:", err)
+	}
+	if err := c.RemoveEventReminder("presentation"); err != nil {
+		log.Println("Ошибка удаления напоминания:", err)
 	}
 
-	if err := calendar.UpdateEvent("lunch", "Hi", "2024-01-15 12:00"); err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка при обновлении с коротким заголовком: %v\n", err)
-	}
-
-	calendar.ShowEvents()
-
-	fmt.Println("\n--- Тестирование удаления событий ---")
-
-	if err := calendar.DeleteEvent("presentation"); err != nil {
-		log.Fatal("Ошибка удаления события:", err)
-	}
-
-	if err := calendar.DeleteEvent("nonexistent"); err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка при удалении несуществующего события: %v\n", err)
-	}
-
-	calendar.ShowEvents()
-
-	fmt.Println("\n--- Тестирование получения события ---")
-	if event, err := calendar.GetEvent("meeting1"); err != nil {
-		log.Fatal("Ошибка получения события:", err)
+	fmt.Println("\n--- Тестирование удаления ---")
+	if _, err := c.GetEvent("presentation"); err != nil {
+		fmt.Println("Событие 'presentation' не найдено, пропускаем удаление")
 	} else {
-		fmt.Printf("Получено событие: %s на %s\n",
-			event.Title,
-			event.StartAt.Format("02.01.2006 15:04"))
+		if err := c.DeleteEvent("presentation"); err != nil {
+			log.Fatal("Ошибка удаления события:", err)
+		}
 	}
 
-	if _, err := calendar.GetEvent("nonexistent"); err != nil {
-		fmt.Printf("✓ Ожидаемая ошибка при получении несуществующего события: %v\n", err)
-	}
+	c.ShowEvents()
 
-	fmt.Println("\n--- Тестирование допустимых символов ---")
-
-	event4, err := events.NewEvent("Meeting 123", "2024-01-17 09:00")
+	fmt.Println("\n--- Демонстрация JSON тегов в Event ---")
+	event4, err := events.NewEvent("Test event for JSON", "2024-01-20 15:00", events.PriorityMedium)
 	if err != nil {
-		log.Fatal("Ошибка создания события с цифрами:", err)
+		log.Fatal("Ошибка создания тестового события:", err)
 	}
-	fmt.Println("✓ Событие с цифрами создано успешно")
 
-	event5, err := events.NewEvent("Team meeting, project discussion.", "2024-01-18 11:00")
+	eventJSON, err := json.MarshalIndent(event4, "", "  ")
 	if err != nil {
-		log.Fatal("Ошибка создания события с запятыми и точками:", err)
-	}
-	fmt.Println("✓ Событие с запятыми и точками создано успешно")
-
-	if err := calendar.AddEvent("meeting123", event4); err != nil {
-		log.Fatal("Ошибка добавления события с цифрами:", err)
+		log.Fatal("Ошибка маршалинга события:", err)
 	}
 
-	if err := calendar.AddEvent("team_meeting", event5); err != nil {
-		log.Fatal("Ошибка добавления события с запятыми и точками:", err)
-	}
+	fmt.Println("JSON представление события:")
+	fmt.Println(string(eventJSON))
 
-	calendar.ShowEvents()
+	fmt.Println("\n=== Демонстрация завершена ===")
+	fmt.Println("Календарь будет автоматически сохранен при завершении программы (defer)")
 }
