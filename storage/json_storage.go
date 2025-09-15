@@ -2,7 +2,6 @@ package storage
 
 import "os"
 
-// JsonStorage — сторадж для прямой записи/чтения JSON
 type JsonStorage struct {
 	*Storage
 }

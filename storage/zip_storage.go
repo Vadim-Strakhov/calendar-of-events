@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-// ZipStorage — сторадж, сохраняющий данные в ZIP-архив
 type ZipStorage struct {
 	*Storage
 }
