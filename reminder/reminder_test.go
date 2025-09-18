@@ -6,7 +6,7 @@ import (
 )
 
 func testReminders() {
-	fmt.Println("\n=== Тест напоминаний ===")
+	fmt.Print("\n=== Тест напоминаний ===\n")
 
 	eventTime := time.Now().Add(10 * time.Second)
 	fmt.Printf("Событие запланировано на: %s\n", eventTime.Format("15:04:05"))
@@ -22,5 +22,5 @@ func testReminders() {
 	fmt.Println("Ждем срабатывания напоминания...")
 	time.Sleep(6 * time.Second)
 
-	fmt.Println("=== Тест завершен ===\n")
+	fmt.Print("=== Тест завершен ===\n")
 }

@@ -216,7 +216,7 @@ func (c *Cmd) executor(input string) {
 		for _, e := range entries {
 			c.outln(e)
 		}
-		c.outln("===================\n")
+		c.outln("===================")
 
 	case "exit":
 		if err := c.calendar.Save(); err != nil {
