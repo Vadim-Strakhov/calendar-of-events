@@ -20,7 +20,7 @@ type Event struct {
 	Reminder *reminder.Reminder `json:"reminder,omitempty"`
 }
 
-var titleRegex = regexp.MustCompile(`^[a-zA-Z0-9 ,\.]{3,50}$`)
+var titleRegex = regexp.MustCompile(`^[\p{L}\p{N} ,\.]{3,50}$`)
 
 func validateTitle(title string) error {
 	title = strings.TrimSpace(title)
