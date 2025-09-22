@@ -243,7 +243,7 @@ func (c *Cmd) showReminders() {
 			c.outf("Событие: %s | Напоминание: %s | Время: %s\n",
 				event.Title,
 				event.Reminder.Message,
-				event.Reminder.At.Format("15:04:05"))
+				event.Reminder.At.Format("02.01.2006 15:04"))
 			hasReminders = true
 		}
 	}

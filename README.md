@@ -37,11 +37,11 @@ go build -o calendar-of-events
 
 | Команда | Описание | Пример |
 |---------|----------|--------|
-| `add` | Добавить событие | `add "meeting" "Встреча с командой" "2025-01-15 14:00" "high"` |
+| `add` | Добавить событие | `add "meeting" "Встреча с командой" "2026-01-15 14:00" "high"` |
 | `list` | Показать все события | `list` |
-| `update` | Обновить событие | `update "meeting" "Новая встреча" "2025-01-15 15:00" "medium"` |
+| `update` | Обновить событие | `update "meeting" "Новая встреча" "2026-01-15 15:00" "medium"` |
 | `remove` | Удалить событие | `remove "meeting"` |
-| `reminder` | Установить напоминание | `reminder "meeting" "Не забудь про встречу!" "2025-01-15 13:30"` |
+| `reminder` | Установить напоминание | `reminder "meeting" "Не забудь про встречу!" "2026-01-15 13:30"` |
 | `reminder-before` | Напоминание за время до события | `reminder-before "meeting" "Скоро встреча!" "30m"` |
 | `cancel-reminder` | Отменить напоминание | `cancel-reminder "meeting"` |
 | `show-reminders` | Показать активные напоминания | `show-reminders` |
